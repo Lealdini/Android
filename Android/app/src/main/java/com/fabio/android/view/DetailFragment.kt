@@ -11,6 +11,8 @@ import androidx.lifecycle.ViewModelProviders
 import androidx.navigation.Navigation
 
 import com.fabio.android.R
+import com.fabio.android.util.getProgressDrawable
+import com.fabio.android.util.loadImage
 import com.fabio.android.viewModel.DetailViewModel
 import kotlinx.android.synthetic.main.fragment_detail.*
 
@@ -29,24 +31,25 @@ class DetailFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewModel = ViewModelProviders.of(this).get(DetailViewModel::class.java)
-        viewModel.fetch()
-
         arguments?.let {
             dogUuid = DetailFragmentArgs.fromBundle(it).dogUuid
         }
 
+        viewModel = ViewModelProviders.of(this).get(DetailViewModel::class.java)
+        viewModel.fetch(dogUuid)
+
         observeViewModel()
     }
 
-    fun observeViewModel(){
-     viewModel.dogLiveData.observe(this, Observer {dog ->
-         dog?.let {
-             dogName.text = dog.dogBreed
-             dogPurpose.text = dog.bredFor
-             dogTemperament.text = dog.temperament
-             dogLifespan.text = dog.lifespan
-         }
-     })
+    fun observeViewModel() {
+        viewModel.dogLiveData.observe(this, Observer { dog ->
+            dog?.let {
+                dogName.text = dog.dogBreed
+                dogPurpose.text = dog.bredFor
+                dogTemperament.text = dog.temperament
+                dogLifespan.text = dog.lifespan
+                context?.let { dogImage.loadImage(dog.ImageUrl, getProgressDrawable(it)) }
+            }
+        })
     }
 }

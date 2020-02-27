@@ -13,6 +13,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.observers.DisposableSingleObserver
 import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.launch
+import java.lang.NumberFormatException
 
 class ListViewModel(application: Application) : BaseViewModel(application) {
 
@@ -29,6 +30,7 @@ class ListViewModel(application: Application) : BaseViewModel(application) {
     val loading = MutableLiveData<Boolean>()
 
     fun refresh() {
+        checkCacheDuration()
         val updateTime = prefHelper.getUpdateTime()
         if (updateTime != null && updateTime != 0L && System.nanoTime() - updateTime < refreshTime) {
             fetchFromDatabase()
@@ -37,7 +39,17 @@ class ListViewModel(application: Application) : BaseViewModel(application) {
         }
     }
 
-    fun refreshBypassCache(){
+    private fun checkCacheDuration() {
+        val cachePreference = prefHelper.getCacheDuration()
+        try {
+            val cachePreferenceInt = cachePreference?.toInt() ?: 5 * 60
+            refreshTime = cachePreferenceInt.times(  1000 * 1000 * 1000L)
+        } catch (e: NumberFormatException) {
+            e.printStackTrace()
+        }
+    }
+
+    fun refreshBypassCache() {
         fetchFromRemote()
     }
 
@@ -46,7 +58,7 @@ class ListViewModel(application: Application) : BaseViewModel(application) {
         launch {
             val dogs = DogDatabase(getApplication()).dogDao().getAllDogs()
             dogsRetrieved(dogs)
-            Toast.makeText(getApplication(),"get from database",Toast.LENGTH_LONG).show()
+            Toast.makeText(getApplication(), "get from database", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -59,7 +71,8 @@ class ListViewModel(application: Application) : BaseViewModel(application) {
                 .subscribeWith(object : DisposableSingleObserver<List<DogBreed>>() {
                     override fun onSuccess(dogList: List<DogBreed>) {
                         storeDogsLocally(dogList)
-                        Toast.makeText(getApplication(),"get from endpoint",Toast.LENGTH_LONG).show()
+                        Toast.makeText(getApplication(), "get from endpoint", Toast.LENGTH_LONG)
+                            .show()
                         NotificationsHelper(getApplication()).createNotification()
                     }
 
